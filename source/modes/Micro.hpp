@@ -30,7 +30,7 @@ private:
 	bool showFPS = false;
 	uint64_t systemtickfrequency_impl = systemtickfrequency;
 public:
-    MicroOverlay() { 
+	MicroOverlay() { 
 		GetConfigSettings(&settings);
 		apmGetPerformanceMode(&performanceMode);
 		if (performanceMode == ApmPerformanceMode_Normal) {
@@ -44,9 +44,9 @@ public:
 		mutexInit(&mutex_Misc);
 		TeslaFPS = settings.refreshRate;
 		systemtickfrequency_impl /= settings.refreshRate;
-		alphabackground = 0x0;
+		IsFrameBackground = false;
 		deactivateOriginalFooter = true;
-        StartThreads();
+		StartThreads();
 	}
 	~MicroOverlay() {
 		CloseThreads();
@@ -58,15 +58,15 @@ public:
 		auto Status = new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer *renderer, u16 x, u16 y, u16 w, u16 h) {
 
 			if (!Initialized) {
-				CPU_dimensions = renderer->drawString("CPU [100%,100%,100%,100%]△4444.4", false, 0, fontsize, fontsize, renderer->a(0x0000));
-				GPU_dimensions = renderer->drawString("GPU 100.0%△4444.4", false, 0, fontsize, fontsize, renderer->a(0x0000));
+				CPU_dimensions = renderer->drawString("CPUItemMicroOverlayCustomDrawerText"_tr.c_str(), false, 0, fontsize, fontsize, renderer->a(0x0000));
+				GPU_dimensions = renderer->drawString("GPUItemMicroOverlayCustomDrawerText"_tr.c_str(), false, 0, fontsize, fontsize, renderer->a(0x0000));
 				if (R_FAILED(sysclkCheck) || !settings.showRAMLoad) {
-					RAM_dimensions = renderer->drawString("RAM 4.4/44.4GB△4444.4", false, 0, fontsize, fontsize, renderer->a(0x0000));
+					RAM_dimensions = renderer->drawString("RAMItemDefaultMicroOverlayCustomDrawerText"_tr.c_str(), false, 0, fontsize, fontsize, renderer->a(0x0000));
 				}
-				else RAM_dimensions = renderer->drawString("RAM 100.0%△4444.4", false, 0, fontsize, fontsize, renderer->a(0x0000));
-				BRD_dimensions = renderer->drawString("BRD 88.8/88.8/88.8\u00B0C@-15.5W[99:99]", false, 0, fontsize, fontsize, renderer->a(0x0000));
-				FAN_dimensions = renderer->drawString("FAN 100.0%", false, 0, fontsize, fontsize, renderer->a(0x0000));
-				FPS_dimensions = renderer->drawString("FPS 44.4", false, 0, fontsize, fontsize, renderer->a(0x0000));
+				else RAM_dimensions = renderer->drawString("RAMItemMicroOverlayCustomDrawerText"_tr.c_str(), false, 0, fontsize, fontsize, renderer->a(0x0000));
+				BRD_dimensions = renderer->drawString("BoardItemMicroOverlayCustomDrawerText"_tr.c_str(), false, 0, fontsize, fontsize, renderer->a(0x0000));
+				FAN_dimensions = renderer->drawString("FanItemMicroOverlayCustomDrawerText"_tr.c_str(), false, 0, fontsize, fontsize, renderer->a(0x0000));
+				FPS_dimensions = renderer->drawString("FPSItemMicroOverlayCustomDrawerText"_tr.c_str(), false, 0, fontsize, fontsize, renderer->a(0x0000));
 				auto spacesize = renderer->drawString(" ", false, 0, fontsize, fontsize, renderer->a(0x0000));
 				margin = spacesize.first;
 				text_width = 0;
@@ -119,55 +119,55 @@ public:
 			uint32_t offset = 0;
 			if (settings.alignTo == 1) {
 				if (GameRunning && showFPS) {
-					offset = (tsl::cfg::FramebufferWidth - (text_width + fps_width)) / 2;
+					offset = (tsl::cfg::FramebufferWidth - (text_width + fps_width)) / 2 - 10;
 				}
 				else offset = (tsl::cfg::FramebufferWidth - text_width) / 2;
 			}
 			else if (settings.alignTo == 2) {
 				if (GameRunning && showFPS) {
-					offset = tsl::cfg::FramebufferWidth - (text_width + fps_width);
+					offset = tsl::cfg::FramebufferWidth - (text_width + fps_width) - 10;
 				}
 				else offset = tsl::cfg::FramebufferWidth - text_width;
 			}
 			uint8_t flags = 0;
 			for (std::string key : tsl::hlp::split(settings.show, '+')) {
 				if (!key.compare("CPU") && !(flags & 1 << 0)) {
-					auto dimensions_s = renderer->drawString("CPU", false, offset, base_y+fontsize, fontsize, renderer->a(settings.catColor));
+					auto dimensions_s = renderer->drawString("CPUMicroOverlayCustomDrawerText"_tr.c_str(), false, offset, base_y+fontsize, fontsize, renderer->a(settings.catColor));
 					uint32_t offset_s = offset + dimensions_s.first + margin;
 					renderer->drawString(CPU_compressed_c, false, offset_s, base_y+fontsize, fontsize, renderer->a(settings.textColor));
 					offset += CPU_dimensions.first + margin;
 					flags |= 1 << 0;
 				}
 				else if (!key.compare("GPU") && !(flags & 1 << 1)) {
-					auto dimensions_s = renderer->drawString("GPU", false, offset, base_y+fontsize, fontsize, renderer->a(settings.catColor));
+					auto dimensions_s = renderer->drawString("GPUMicroOverlayCustomDrawerText"_tr.c_str(), false, offset, base_y+fontsize, fontsize, renderer->a(settings.catColor));
 					uint32_t offset_s = offset + dimensions_s.first + margin;
 					renderer->drawString(GPU_Load_c, false, offset_s, base_y+fontsize, fontsize, renderer->a(settings.textColor));
 					offset += GPU_dimensions.first + margin;
 					flags |= 1 << 1;
 				}
 				else if (!key.compare("RAM") && !(flags & 1 << 2)) {
-					auto dimensions_s = renderer->drawString("RAM", false, offset, base_y+fontsize, fontsize, renderer->a(settings.catColor));
+					auto dimensions_s = renderer->drawString("RAMMicroOverlayCustomDrawerText"_tr.c_str(), false, offset, base_y+fontsize, fontsize, renderer->a(settings.catColor));
 					uint32_t offset_s = offset + dimensions_s.first + margin;
 					renderer->drawString(RAM_var_compressed_c, false, offset_s, base_y+fontsize, fontsize, renderer->a(settings.textColor));
 					offset += RAM_dimensions.first + margin;
 					flags |= 1 << 2;
 				}
 				else if (!key.compare("BRD") && !(flags & 1 << 3)) {
-					auto dimensions_s = renderer->drawString("BRD", false, offset, base_y+fontsize, fontsize, renderer->a(settings.catColor));
+					auto dimensions_s = renderer->drawString("BRDMicroOverlayCustomDrawerText"_tr.c_str(), false, offset, base_y+fontsize, fontsize, renderer->a(settings.catColor));
 					uint32_t offset_s = offset + dimensions_s.first + margin;
 					renderer->drawString(skin_temperature_c, false, offset_s, base_y+fontsize, fontsize, renderer->a(settings.textColor));
 					offset += BRD_dimensions.first + margin;
 					flags |= 1 << 3;
 				}
 				else if (!key.compare("FAN") && !(flags & 1 << 4)) {
-					auto dimensions_s = renderer->drawString("FAN", false, offset, base_y+fontsize, fontsize, renderer->a(settings.catColor));
+					auto dimensions_s = renderer->drawString("FANMicroOverlayCustomDrawerText"_tr.c_str(), false, offset, base_y+fontsize, fontsize, renderer->a(settings.catColor));
 					uint32_t offset_s = offset + dimensions_s.first + margin;
 					renderer->drawString(Rotation_SpeedLevel_c, false, offset_s, base_y+fontsize, fontsize, renderer->a(settings.textColor));
 					offset += FAN_dimensions.first + margin;
 					flags |= 1 << 4;
 				}
 				else if (!key.compare("FPS") && GameRunning && !(flags & 1 << 5)) {
-					auto dimensions_s = renderer->drawString("FPS", false, offset, base_y+fontsize, fontsize, renderer->a(settings.catColor));
+					auto dimensions_s = renderer->drawString("FPSMicroOverlayCustomDrawerText"_tr.c_str(), false, offset, base_y+fontsize, fontsize, renderer->a(settings.catColor));
 					uint32_t offset_s = offset + dimensions_s.first + margin;
 					renderer->drawString(FPS_var_compressed_c, false, offset_s, base_y+fontsize, fontsize, renderer->a(settings.textColor));
 					offset += FPS_dimensions.first + margin;
@@ -347,24 +347,22 @@ public:
 		}
 		mutexUnlock(&mutex_BatteryChecker);
 		snprintf(Rotation_SpeedLevel_c, sizeof Rotation_SpeedLevel_c, "%2.1f%%", Rotation_SpeedLevel_f * 100);
-		
+
 		///FPS
 		snprintf(FPS_var_compressed_c, sizeof FPS_var_compressed_c, "%2.1f", FPSavg);
 
 		mutexUnlock(&mutex_Misc);
-		
-		
-		
 	}
-	virtual bool handleInput(uint64_t keysDown, uint64_t keysHeld, touchPosition touchInput, JoystickPosition leftJoyStick, JoystickPosition rightJoyStick) override {
+
+	virtual bool handleInput(uint64_t keysDown, uint64_t keysHeld, const HidTouchState &touchPos, HidAnalogStickState leftJoyStick, HidAnalogStickState rightJoyStick) override {
 		if (isKeyComboPressed(keysHeld, keysDown, mappedButtons)) {
 			TeslaFPS = 60;
-            if (skipMain)
-                tsl::goBack();
-            else {
-			    tsl::setNextOverlay(filepath.c_str());
-			    tsl::Overlay::get()->close();
-            }
+			if (skipMain)
+				tsl::goBack();
+			else {
+				tsl::setNextOverlay(filepath.c_str());
+				tsl::Overlay::get()->close();
+			}
 			return true;
 		}
 		return false;

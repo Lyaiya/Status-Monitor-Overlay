@@ -18,7 +18,7 @@ private:
 	char NVJPG_Hz_c[18];
 	char Nifm_pass[96];
 public:
-    MiscOverlay() { 
+	MiscOverlay() { 
 		smInitialize();
 		nifmCheck = nifmInitialize(NifmServiceType_Admin);
 		if (R_SUCCEEDED(mmuInitialize())) {
@@ -47,11 +47,11 @@ public:
 		audsnoopExit();
 	}
 
-    virtual tsl::elm::Element* createUI() override {
-		rootFrame = new tsl::elm::OverlayFrame("Status Monitor", APP_VERSION);
+	virtual tsl::elm::Element* createUI() override {
+		rootFrame = new tsl::elm::OverlayFrame("PluginName"_tr, APP_VERSION);
 
 		auto Status = new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer *renderer, u16 x, u16 y, u16 w, u16 h) {
-			
+
 			///DSP
 			if (R_SUCCEEDED(audsnoopCheck)) {
 				renderer->drawString(DSP_Load_c, false, 20, 120, 20, renderer->a(0xFFFF));
@@ -59,7 +59,7 @@ public:
 
 			//Multimedia engines
 			if (R_SUCCEEDED(nvdecCheck | nvencCheck | nvjpgCheck)) {
-				renderer->drawString("Multimedia clock rates:", false, 20, 165, 20, renderer->a(0xFFFF));
+				renderer->drawString("MultimediaClockRatesMiscOverlayCustomDrawerText"_tr.c_str(), false, 20, 165, 20, renderer->a(0xFFFF));
 				if (R_SUCCEEDED(nvdecCheck))
 					renderer->drawString(NVDEC_Hz_c, false, 35, 185, 15, renderer->a(0xFFFF));
 				if (R_SUCCEEDED(nvencCheck))
@@ -69,22 +69,22 @@ public:
 			}
 
 			if (R_SUCCEEDED(nifmCheck)) {
-				renderer->drawString("Network", false, 20, 255, 20, renderer->a(0xFFFF));
+				renderer->drawString("NetworkMiscOverlayCustomDrawerText"_tr.c_str(), false, 20, 255, 20, renderer->a(0xFFFF));
 				if (!Nifm_internet_rc) {
 					if (NifmConnectionType == NifmInternetConnectionType_WiFi) {
-						renderer->drawString("Type: Wi-Fi", false, 20, 280, 18, renderer->a(0xFFFF));
+						renderer->drawString("NetworkTypeWifiMiscOverlayCustomDrawerText"_tr.c_str(), false, 20, 280, 18, renderer->a(0xFFFF));
 						if (!Nifm_profile_rc) {
 							if (Nifm_showpass)
 								renderer->drawString(Nifm_pass, false, 20, 305, 15, renderer->a(0xFFFF));
 							else
-								renderer->drawString("Press Y to show password", false, 20, 305, 15, renderer->a(0xFFFF));
+								renderer->drawString("NetworkTypeWifiShowPasswordMiscOverlayCustomDrawerText"_tr.c_str(), false, 20, 305, 15, renderer->a(0xFFFF));
 						}
 					}
 					else if (NifmConnectionType == NifmInternetConnectionType_Ethernet)
-						renderer->drawString("Type: Ethernet", false, 20, 280, 18, renderer->a(0xFFFF));
+						renderer->drawString("NetworkTypeEthernetMiscOverlayCustomDrawerText"_tr.c_str(), false, 20, 280, 18, renderer->a(0xFFFF));
 				}
 				else
-					renderer->drawString("Type: Not connected", false, 20, 280, 18, renderer->a(0xFFFF));
+					renderer->drawString("NetworkTypeNotConnectedMiscOverlayCustomDrawerText"_tr.c_str(), false, 20, 280, 18, renderer->a(0xFFFF));
 		}
 
 		});
@@ -96,10 +96,10 @@ public:
 
 	virtual void update() override {
 
-		snprintf(DSP_Load_c, sizeof DSP_Load_c, "DSP usage: %u%%", DSP_Load_u);
-		snprintf(NVDEC_Hz_c, sizeof NVDEC_Hz_c, "NVDEC: %.1f MHz", (float)NVDEC_Hz / 1000000);
-		snprintf(NVENC_Hz_c, sizeof NVENC_Hz_c, "NVENC: %.1f MHz", (float)NVENC_Hz / 1000000);
-		snprintf(NVJPG_Hz_c, sizeof NVJPG_Hz_c, "NVJPG: %.1f MHz", (float)NVJPG_Hz / 1000000);
+		snprintf(DSP_Load_c, sizeof DSP_Load_c, "UpdateDSPUsageMiscOverlayCustomDrawerText"_tr.c_str(), DSP_Load_u);
+		snprintf(NVDEC_Hz_c, sizeof NVDEC_Hz_c, "UpdateNVDECMiscOverlayCustomDrawerText"_tr.c_str(), (float)NVDEC_Hz / 1000000);
+		snprintf(NVENC_Hz_c, sizeof NVENC_Hz_c, "UpdateNVENCMiscOverlayCustomDrawerText"_tr.c_str(), (float)NVENC_Hz / 1000000);
+		snprintf(NVJPG_Hz_c, sizeof NVJPG_Hz_c, "UpdateNVJPGMiscOverlayCustomDrawerText"_tr.c_str(), (float)NVJPG_Hz / 1000000);
 		char pass_temp1[25] = "";
 		char pass_temp2[25] = "";
 		char pass_temp3[17] = "";
@@ -118,13 +118,13 @@ public:
 		snprintf(Nifm_pass, sizeof Nifm_pass, "%s\n%s\n%s", pass_temp1, pass_temp2, pass_temp3);	
 	}
 
-	virtual bool handleInput(uint64_t keysDown, uint64_t keysHeld, touchPosition touchInput, JoystickPosition leftJoyStick, JoystickPosition rightJoyStick) override {
-		if (keysHeld & KEY_Y) {
+	virtual bool handleInput(uint64_t keysDown, uint64_t keysHeld, const HidTouchState &touchPos, HidAnalogStickState leftJoyStick, HidAnalogStickState rightJoyStick) override {
+		if (keysHeld & HidNpadButton_Y) {
 			Nifm_showpass = true;
 		}
 		else Nifm_showpass = false;
 
-		if (keysDown & KEY_B) {
+		if (keysDown & HidNpadButton_B) {
 			tsl::goBack();
 			return true;
 		}
