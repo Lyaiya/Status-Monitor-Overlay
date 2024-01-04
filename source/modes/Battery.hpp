@@ -74,7 +74,7 @@ public:
 	}
 
 	virtual bool handleInput(uint64_t keysDown, uint64_t keysHeld, const HidTouchState &touchPos, HidAnalogStickState leftJoyStick, HidAnalogStickState rightJoyStick) override {
-		if (keysDown & HidNpadButton_B) {
+		if (keysHeld & HidNpadButton_B) {
 			tsl::goBack();
 			return true;
 		}

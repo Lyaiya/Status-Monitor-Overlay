@@ -124,7 +124,7 @@ public:
 		}
 		else Nifm_showpass = false;
 
-		if (keysDown & HidNpadButton_B) {
+		if (keysHeld & HidNpadButton_B) {
 			tsl::goBack();
 			return true;
 		}
