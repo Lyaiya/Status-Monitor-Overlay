@@ -30,8 +30,10 @@ private:
 	bool showFPS = false;
 	uint64_t systemtickfrequency_impl = systemtickfrequency;
 public:
-	MicroOverlay() { 
-		GetConfigSettings(&settings);
+	MicroOverlay() {
+		tsl::hlp::doWithSDCardHandle([this] {
+			GetConfigSettings(&settings);
+		});
 		apmGetPerformanceMode(&performanceMode);
 		if (performanceMode == ApmPerformanceMode_Normal) {
 			fontsize = settings.handheldFontSize;

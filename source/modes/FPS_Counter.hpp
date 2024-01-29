@@ -6,8 +6,10 @@ private:
 	size_t fontsize = 0;
 	ApmPerformanceMode performanceMode = ApmPerformanceMode_Invalid;
 public:
-	com_FPS() { 
-		GetConfigSettings(&settings);
+	com_FPS() {
+		tsl::hlp::doWithSDCardHandle([this] {
+			GetConfigSettings(&settings);
+		});
 		apmGetPerformanceMode(&performanceMode);
 		if (performanceMode == ApmPerformanceMode_Normal) {
 			fontsize = settings.handheldFontSize;
