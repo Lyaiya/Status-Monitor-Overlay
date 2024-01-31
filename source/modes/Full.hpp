@@ -29,8 +29,10 @@ private:
 	FullSettings settings;
 	uint64_t systemtickfrequency_impl = systemtickfrequency;
 public:
-    FullOverlay() { 
-		GetConfigSettings(&settings);
+    FullOverlay() {
+		tsl::hlp::doWithSDCardHandle([this] {
+			GetConfigSettings(&settings);
+		});
 		mutexInit(&mutex_BatteryChecker);
 		mutexInit(&mutex_Misc);
 		tsl::hlp::requestForeground(false);

@@ -441,48 +441,52 @@ public:
 
 // This function gets called on startup to create a new Overlay object
 int main(int argc, char **argv) {
-	tsl::hlp::doWithSDCardHandle([argc, argv] {
+	tsl::hlp::doWithSDCardHandle([] {
 		ParseIniFile(); // parse INI from file
-
-		if (argc > 0) {
-			filename = argv[0];
-		}
-		for (u8 arg = 0; arg < argc; arg++) {
-			if (strcasecmp(argv[arg], "--microOverlay_") == 0) {
-				framebufferWidth = 1280;
-				framebufferHeight = 28;
-				FILE* test = fopen(std::string(folderpath + filename).c_str(), "rb");
-				if (test) {
-					fclose(test);
-					filepath = folderpath + filename;
-				}
-				else {
-					test = fopen(std::string(folderpath + APPTITLE ".ovl").c_str(), "rb");
-					if (test) {
-						fclose(test);
-						filepath = folderpath + APPTITLE ".ovl";
-					}
-				}
-				return tsl::loop<MicroMode>(argc, argv);
-			} else if (strcasecmp(argv[arg], "--microOverlay") == 0) {
-				skipMain = true;
-				framebufferWidth = 1280;
-				framebufferHeight = 28;
-				FILE* test = fopen(std::string(folderpath + filename).c_str(), "rb");
-				if (test) {
-					fclose(test);
-					filepath = folderpath + filename;
-				}
-				else {
-					test = fopen(std::string(folderpath + APPTITLE ".ovl").c_str(), "rb");
-					if (test) {
-						fclose(test);
-						filepath = folderpath + APPTITLE ".ovl";
-					}
-				}
-				return tsl::loop<MicroMode>(argc, argv);
-			}
-		}
-		return tsl::loop<MonitorOverlay>(argc, argv);
 	});
+
+	if (argc > 0) {
+		filename = argv[0];
+	}
+	for (u8 arg = 0; arg < argc; arg++) {
+		if (strcasecmp(argv[arg], "--microOverlay_") == 0) {
+			framebufferWidth = 1280;
+			framebufferHeight = 28;
+			tsl::hlp::doWithSDCardHandle([] {
+				FILE* test = fopen(std::string(folderpath + filename).c_str(), "rb");
+				if (test) {
+					fclose(test);
+					filepath = folderpath + filename;
+				}
+				else {
+					test = fopen(std::string(folderpath + APPTITLE ".ovl").c_str(), "rb");
+					if (test) {
+						fclose(test);
+						filepath = folderpath + APPTITLE ".ovl";
+					}
+				}
+			});
+			return tsl::loop<MicroMode>(argc, argv);
+		} else if (strcasecmp(argv[arg], "--microOverlay") == 0) {
+			skipMain = true;
+			framebufferWidth = 1280;
+			framebufferHeight = 28;
+			tsl::hlp::doWithSDCardHandle([] {
+				FILE* test = fopen(std::string(folderpath + filename).c_str(), "rb");
+				if (test) {
+					fclose(test);
+					filepath = folderpath + filename;
+				}
+				else {
+					test = fopen(std::string(folderpath + APPTITLE ".ovl").c_str(), "rb");
+					if (test) {
+						fclose(test);
+						filepath = folderpath + APPTITLE ".ovl";
+					}
+				}
+			});
+			return tsl::loop<MicroMode>(argc, argv);
+		}
+	}
+	return tsl::loop<MonitorOverlay>(argc, argv);
 }

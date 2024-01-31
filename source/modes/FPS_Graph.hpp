@@ -4,8 +4,10 @@ private:
 	char FPSavg_c[8];
 	FpsGraphSettings settings;
 public:
-	com_FPSGraph() { 
-		GetConfigSettings(&settings);
+	com_FPSGraph() {
+		tsl::hlp::doWithSDCardHandle([this] {
+			GetConfigSettings(&settings);
+		});
 		switch(settings.setPos) {
 			case 1:
 			case 4:

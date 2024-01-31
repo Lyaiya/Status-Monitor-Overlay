@@ -15,8 +15,10 @@ private:
 	ApmPerformanceMode performanceMode = ApmPerformanceMode_Invalid;
 	uint64_t systemtickfrequency_impl = systemtickfrequency;
 public:
-	MiniOverlay() { 
-		GetConfigSettings(&settings);
+	MiniOverlay() {
+		tsl::hlp::doWithSDCardHandle([this] {
+			GetConfigSettings(&settings);
+		});
 		apmGetPerformanceMode(&performanceMode);
 		if (performanceMode == ApmPerformanceMode_Normal) {
 			fontsize = settings.handheldFontSize;
