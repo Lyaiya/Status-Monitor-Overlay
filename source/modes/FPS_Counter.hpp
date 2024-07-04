@@ -6,8 +6,10 @@ private:
 	size_t fontsize = 0;
 	ApmPerformanceMode performanceMode = ApmPerformanceMode_Invalid;
 public:
-    com_FPS() { 
-		GetConfigSettings(&settings);
+	com_FPS() {
+		tsl::hlp::doWithSDCardHandle([this] {
+			GetConfigSettings(&settings);
+		});
 		apmGetPerformanceMode(&performanceMode);
 		if (performanceMode == ApmPerformanceMode_Normal) {
 			fontsize = settings.handheldFontSize;
@@ -28,7 +30,7 @@ public:
 				break;
 		}
 		StartFPSCounterThread();
-		alphabackground = 0x0;
+		IsFrameBackground = false;
 		tsl::hlp::requestForeground(false);
 		FullMode = false;
 		TeslaFPS = settings.refreshRate;
@@ -41,11 +43,11 @@ public:
 			tsl::gfx::Renderer::getRenderer().setLayerPos(0, 0);
 		FullMode = true;
 		tsl::hlp::requestForeground(true);
-		alphabackground = 0xD;
+		IsFrameBackground = true;
 		deactivateOriginalFooter = false;
 	}
 
-    virtual tsl::elm::Element* createUI() override {
+	virtual tsl::elm::Element* createUI() override {
 		rootFrame = new tsl::elm::OverlayFrame("", "");
 
 		auto Status = new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer *renderer, u16 x, u16 y, u16 w, u16 h) {
@@ -96,9 +98,9 @@ public:
 			fontsize = settings.dockedFontSize;
 		}
 		snprintf(FPSavg_c, sizeof FPSavg_c, "%2.1f", FPSavg);
-		
 	}
-	virtual bool handleInput(uint64_t keysDown, uint64_t keysHeld, touchPosition touchInput, JoystickPosition leftJoyStick, JoystickPosition rightJoyStick) override {
+
+	virtual bool handleInput(uint64_t keysDown, uint64_t keysHeld, const HidTouchState &touchPos, HidAnalogStickState leftJoyStick, HidAnalogStickState rightJoyStick) override {
 		if (isKeyComboPressed(keysHeld, keysDown, mappedButtons)) {
 			tsl::goBack();
 			return true;

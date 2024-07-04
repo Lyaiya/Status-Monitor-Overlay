@@ -15,8 +15,10 @@ private:
 	ApmPerformanceMode performanceMode = ApmPerformanceMode_Invalid;
 	uint64_t systemtickfrequency_impl = systemtickfrequency;
 public:
-    MiniOverlay() { 
-		GetConfigSettings(&settings);
+	MiniOverlay() {
+		tsl::hlp::doWithSDCardHandle([this] {
+			GetConfigSettings(&settings);
+		});
 		apmGetPerformanceMode(&performanceMode);
 		if (performanceMode == ApmPerformanceMode_Normal) {
 			fontsize = settings.handheldFontSize;
@@ -36,28 +38,26 @@ public:
 		}
 		mutexInit(&mutex_BatteryChecker);
 		mutexInit(&mutex_Misc);
-		alphabackground = 0x0;
+		IsFrameBackground = false;
 		tsl::hlp::requestForeground(false);
 		FullMode = false;
 		TeslaFPS = settings.refreshRate;
 		systemtickfrequency_impl /= settings.refreshRate;
 		deactivateOriginalFooter = true;
-        StartThreads();
+		StartThreads();
 	}
 	~MiniOverlay() {
 		CloseThreads();
 		FullMode = true;
 		tsl::hlp::requestForeground(true);
-		alphabackground = 0xD;
+		IsFrameBackground = true;
 		deactivateOriginalFooter = false;
 	}
 
-    virtual tsl::elm::Element* createUI() override {
-
+	virtual tsl::elm::Element* createUI() override {
 		rootFrame = new tsl::elm::OverlayFrame("", "");
 
 		auto Status = new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer *renderer, u16 x, u16 y, u16 w, u16 h) {
-			
 			if (!Initialized) {
 				std::pair<u32, u32> dimensions;
 				rectangleWidth = 0;
@@ -100,7 +100,7 @@ public:
 				}
 				Initialized = true;
 			}
-			
+
 			char print_text[24] = "";
 			size_t entry_count = 0;
 			uint8_t flags = 0;
@@ -108,49 +108,49 @@ public:
 				if (!key.compare("CPU") && !(flags & 1 << 0)) {
 					if (print_text[0])
 						strcat(print_text, "\n");
-					strcat(print_text, "CPU");
+					strcat(print_text, "CPUItemMiniOverlayCustomDrawerText"_tr.c_str());
 					entry_count++;
 					flags |= (1 << 0);
 				}
 				else if (!key.compare("GPU") && !(flags & 1 << 1)) {
 					if (print_text[0])
 						strcat(print_text, "\n");
-					strcat(print_text, "GPU");
+					strcat(print_text, "GPUItemMiniOverlayCustomDrawerText"_tr.c_str());
 					entry_count++;
 					flags |= (1 << 1);
 				}
 				else if (!key.compare("RAM") && !(flags & 1 << 2)) {
 					if (print_text[0])
 						strcat(print_text, "\n");
-					strcat(print_text, "RAM");
+					strcat(print_text, "RAMItemMiniOverlayCustomDrawerText"_tr.c_str());
 					entry_count++;
 					flags |= (1 << 2);
 				}
 				else if (!key.compare("TEMP") && !(flags & 1 << 3)) {
 					if (print_text[0])
 						strcat(print_text, "\n");
-					strcat(print_text, "TEMP");
+					strcat(print_text, "TEMPItemMiniOverlayCustomDrawerText"_tr.c_str());
 					entry_count++;
 					flags |= (1 << 3);
 				}
 				else if (!key.compare("DRAW") && !(flags & 1 << 4)) {
 					if (print_text[0])
 						strcat(print_text, "\n");
-					strcat(print_text, "DRAW");
+					strcat(print_text, "DRAWItemMiniOverlayCustomDrawerText"_tr.c_str());
 					entry_count++;
 					flags |= (1 << 4);
 				}
 				else if (!key.compare("FAN") && !(flags & 1 << 5)) {
 					if (print_text[0])
 						strcat(print_text, "\n");
-					strcat(print_text, "FAN");
+					strcat(print_text, "FANItemMiniOverlayCustomDrawerText"_tr.c_str());
 					entry_count++;
 					flags |= (1 << 5);
 				}
 				else if (!key.compare("FPS") && !(flags & 1 << 6) && GameRunning) {
 					if (print_text[0])
 						strcat(print_text, "\n");
-					strcat(print_text, "FPS");
+					strcat(print_text, "FPSItemMiniOverlayCustomDrawerText"_tr.c_str());
 					entry_count++;
 					flags |= (1 << 6);
 				}
@@ -185,10 +185,10 @@ public:
 					base_y = 720 - height;
 					break;
 			}
-			
+
 			renderer->drawRect(base_x, base_y, margin + rectangleWidth + (fontsize / 3), height, a(settings.backgroundColor));
 			renderer->drawString(print_text, false, base_x, base_y + fontsize, fontsize, renderer->a(settings.catColor));
-			
+
 			///GPU
 			renderer->drawString(Variables, false, base_x + margin, base_y + fontsize, fontsize, renderer->a(settings.textColor));
 		});
@@ -234,34 +234,34 @@ public:
 		else snprintf(MINI_CPU_Usage3, sizeof(MINI_CPU_Usage3), "%.0f%%", (1.d - ((double)idletick3 / systemtickfrequency_impl)) * 100);
 
 		mutexLock(&mutex_Misc);
-		
+
 		char MINI_CPU_compressed_c[42] = "";
 		if (settings.realFrequencies && realCPU_Hz) {
-			snprintf(MINI_CPU_compressed_c, sizeof(MINI_CPU_compressed_c), 
-				"[%s,%s,%s,%s]@%hu.%hhu", 
-				MINI_CPU_Usage0, MINI_CPU_Usage1, MINI_CPU_Usage2, MINI_CPU_Usage3, 
+			snprintf(MINI_CPU_compressed_c, sizeof(MINI_CPU_compressed_c),
+				"[%s,%s,%s,%s]@%hu.%hhu",
+				MINI_CPU_Usage0, MINI_CPU_Usage1, MINI_CPU_Usage2, MINI_CPU_Usage3,
 				realCPU_Hz / 1000000, (realCPU_Hz / 100000) % 10);
 		}
 		else {
-			snprintf(MINI_CPU_compressed_c, sizeof(MINI_CPU_compressed_c), 
-				"[%s,%s,%s,%s]@%hu.%hhu", 
-				MINI_CPU_Usage0, MINI_CPU_Usage1, MINI_CPU_Usage2, MINI_CPU_Usage3, 
+			snprintf(MINI_CPU_compressed_c, sizeof(MINI_CPU_compressed_c),
+				"[%s,%s,%s,%s]@%hu.%hhu",
+				MINI_CPU_Usage0, MINI_CPU_Usage1, MINI_CPU_Usage2, MINI_CPU_Usage3,
 				CPU_Hz / 1000000, (CPU_Hz / 100000) % 10);
 		}
 		char MINI_GPU_Load_c[14];
 		if (settings.realFrequencies && realGPU_Hz) {
-			snprintf(MINI_GPU_Load_c, sizeof(MINI_GPU_Load_c), 
-				"%hu.%hhu%%@%hu.%hhu", 
+			snprintf(MINI_GPU_Load_c, sizeof(MINI_GPU_Load_c),
+				"%hu.%hhu%%@%hu.%hhu",
 				GPU_Load_u / 10, GPU_Load_u % 10,
 				realGPU_Hz / 1000000, (realGPU_Hz / 100000) % 10);
 		}
 		else {
-			snprintf(MINI_GPU_Load_c, sizeof(MINI_GPU_Load_c), 
-				"%hu.%hhu%%@%hu.%hhu", 
-				GPU_Load_u / 10, GPU_Load_u % 10, 
+			snprintf(MINI_GPU_Load_c, sizeof(MINI_GPU_Load_c),
+				"%hu.%hhu%%@%hu.%hhu",
+				GPU_Load_u / 10, GPU_Load_u % 10,
 				GPU_Hz / 1000000, (GPU_Hz / 100000) % 10);
 		}
-		
+
 		///RAM
 		char MINI_RAM_var_compressed_c[19] = "";
 		if (R_FAILED(sysclkCheck) || !settings.showRAMLoad) {
@@ -276,49 +276,49 @@ public:
 			float RAM_Used_systemunsafe_f = (float)RAM_Used_systemunsafe_u / 1024 / 1024;
 			float RAM_Used_all_f = RAM_Used_application_f + RAM_Used_applet_f + RAM_Used_system_f + RAM_Used_systemunsafe_f;
 			if (settings.realFrequencies && realRAM_Hz) {
-				snprintf(MINI_RAM_var_compressed_c, sizeof(MINI_RAM_var_compressed_c), 
-					"%.0f/%.0fMB@%hu.%hhu", 
-					RAM_Used_all_f, RAM_Total_all_f, 
+				snprintf(MINI_RAM_var_compressed_c, sizeof(MINI_RAM_var_compressed_c),
+					"%.0f/%.0fMB@%hu.%hhu",
+					RAM_Used_all_f, RAM_Total_all_f,
 					realRAM_Hz / 1000000, (realRAM_Hz / 100000) % 10);
 			}
 			else {
-				snprintf(MINI_RAM_var_compressed_c, sizeof(MINI_RAM_var_compressed_c), 
+				snprintf(MINI_RAM_var_compressed_c, sizeof(MINI_RAM_var_compressed_c),
 					"%.0f/%.0fMB@%hu.%hhu",
-					RAM_Used_all_f, RAM_Total_all_f, 
+					RAM_Used_all_f, RAM_Total_all_f,
 					RAM_Hz / 1000000, (RAM_Hz / 100000) % 10);
 			}
 		}
 		else {
 			if (settings.realFrequencies && realRAM_Hz) {
-				snprintf(MINI_RAM_var_compressed_c, sizeof(MINI_RAM_var_compressed_c), 
-					"%hu.%hhu%%@%hu.%hhu", 
-					ramLoad[SysClkRamLoad_All] / 10, ramLoad[SysClkRamLoad_All] % 10, 
+				snprintf(MINI_RAM_var_compressed_c, sizeof(MINI_RAM_var_compressed_c),
+					"%hu.%hhu%%@%hu.%hhu",
+					ramLoad[SysClkRamLoad_All] / 10, ramLoad[SysClkRamLoad_All] % 10,
 					realRAM_Hz / 1000000, (realRAM_Hz / 100000) % 10);
 			}
 			else {
-				snprintf(MINI_RAM_var_compressed_c, sizeof(MINI_RAM_var_compressed_c), 
-					"%hu.%hhu%%@%hu.%hhu", 
-					ramLoad[SysClkRamLoad_All] / 10, ramLoad[SysClkRamLoad_All] % 10, 
+				snprintf(MINI_RAM_var_compressed_c, sizeof(MINI_RAM_var_compressed_c),
+					"%hu.%hhu%%@%hu.%hhu",
+					ramLoad[SysClkRamLoad_All] / 10, ramLoad[SysClkRamLoad_All] % 10,
 					RAM_Hz / 1000000, (RAM_Hz / 100000) % 10);
 			}
 		}
-		
+
 		///Thermal
 		if (hosversionAtLeast(10,0,0)) {
-			snprintf(skin_temperature_c, sizeof skin_temperature_c, 
-				"%2.1f\u00B0C/%2.1f\u00B0C/%hu.%hhu\u00B0C", 
-				SOC_temperatureF, PCB_temperatureF, 
+			snprintf(skin_temperature_c, sizeof skin_temperature_c,
+				"%2.1f\u00B0C/%2.1f\u00B0C/%hu.%hhu\u00B0C",
+				SOC_temperatureF, PCB_temperatureF,
 				skin_temperaturemiliC / 1000, (skin_temperaturemiliC / 100) % 10);
 		}
 		else {
-			snprintf(skin_temperature_c, sizeof skin_temperature_c, 
-				"%hu.%hhu\u00B0C/%hu.%hhu\u00B0C/%hu.%hhu\u00B0C", 
-				SOC_temperatureC / 1000, (SOC_temperatureC / 100) % 10, 
-				PCB_temperatureC / 1000, (PCB_temperatureC / 100) % 10, 
+			snprintf(skin_temperature_c, sizeof skin_temperature_c,
+				"%hu.%hhu\u00B0C/%hu.%hhu\u00B0C/%hu.%hhu\u00B0C",
+				SOC_temperatureC / 1000, (SOC_temperatureC / 100) % 10,
+				PCB_temperatureC / 1000, (PCB_temperatureC / 100) % 10,
 				skin_temperaturemiliC / 1000, (skin_temperaturemiliC / 100) % 10);
 		}
 		snprintf(Rotation_SpeedLevel_c, sizeof Rotation_SpeedLevel_c, "%2.1f%%", Rotation_SpeedLevel_f * 100);
-		
+
 		///FPS
 		char Temp[256] = "";
 		uint8_t flags = 0;
@@ -328,42 +328,42 @@ public:
 					strcat(Temp, "\n");
 				}
 				strcat(Temp, MINI_CPU_compressed_c);
-				flags |= 1 << 0;			
+				flags |= 1 << 0;
 			}
 			else if (!key.compare("GPU") && !(flags & 1 << 1)) {
 				if (Temp[0]) {
 					strcat(Temp, "\n");
 				}
 				strcat(Temp, MINI_GPU_Load_c);
-				flags |= 1 << 1;			
+				flags |= 1 << 1;
 			}
 			else if (!key.compare("RAM") && !(flags & 1 << 2)) {
 				if (Temp[0]) {
 					strcat(Temp, "\n");
 				}
 				strcat(Temp, MINI_RAM_var_compressed_c);
-				flags |= 1 << 2;			
+				flags |= 1 << 2;
 			}
 			else if (!key.compare("TEMP") && !(flags & 1 << 3)) {
 				if (Temp[0]) {
 					strcat(Temp, "\n");
 				}
 				strcat(Temp, skin_temperature_c);
-				flags |= 1 << 3;			
+				flags |= 1 << 3;
 			}
 			else if (!key.compare("FAN") && !(flags & 1 << 4)) {
 				if (Temp[0]) {
 					strcat(Temp, "\n");
 				}
 				strcat(Temp, Rotation_SpeedLevel_c);
-				flags |= 1 << 4;			
+				flags |= 1 << 4;
 			}
 			else if (!key.compare("DRAW") && !(flags & 1 << 5)) {
 				if (Temp[0]) {
 					strcat(Temp, "\n");
 				}
 				strcat(Temp, SoCPCB_temperature_c);
-				flags |= 1 << 5;			
+				flags |= 1 << 5;
 			}
 			else if (!key.compare("FPS") && !(flags & 1 << 6) && GameRunning) {
 				if (Temp[0]) {
@@ -372,7 +372,7 @@ public:
 				char Temp_s[8] = "";
 				snprintf(Temp_s, sizeof(Temp_s), "%2.1f", FPSavg);
 				strcat(Temp, Temp_s);
-				flags |= 1 << 6;			
+				flags |= 1 << 6;
 			}
 		}
 		mutexUnlock(&mutex_Misc);
@@ -384,12 +384,13 @@ public:
 			snprintf(remainingBatteryLife, sizeof remainingBatteryLife, "%d:%02d", batTimeEstimate / 60, batTimeEstimate % 60);
 		}
 		else snprintf(remainingBatteryLife, sizeof remainingBatteryLife, "-:--");
-		
+
 		snprintf(SoCPCB_temperature_c, sizeof SoCPCB_temperature_c, "%0.2fW[%s]", PowerConsumption, remainingBatteryLife);
 		mutexUnlock(&mutex_BatteryChecker);
 
 	}
-	virtual bool handleInput(uint64_t keysDown, uint64_t keysHeld, touchPosition touchInput, JoystickPosition leftJoyStick, JoystickPosition rightJoyStick) override {
+
+	virtual bool handleInput(uint64_t keysDown, uint64_t keysHeld, const HidTouchState &touchPos, HidAnalogStickState leftJoyStick, HidAnalogStickState rightJoyStick) override {
 		if (isKeyComboPressed(keysHeld, keysDown, mappedButtons)) {
 			TeslaFPS = 60;
 			tsl::goBack();

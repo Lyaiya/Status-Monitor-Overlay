@@ -2,7 +2,7 @@ class BatteryOverlay : public tsl::Gui {
 private:
 	char Battery_c[512];
 public:
-    BatteryOverlay() {
+	BatteryOverlay() {
 		mutexInit(&mutex_BatteryChecker);
 		StartBatteryThread();
 	}
@@ -10,11 +10,11 @@ public:
 		CloseThreads();
 	}
 
-    virtual tsl::elm::Element* createUI() override {
-		rootFrame = new tsl::elm::OverlayFrame("Status Monitor", APP_VERSION);
+	virtual tsl::elm::Element* createUI() override {
+		rootFrame = new tsl::elm::OverlayFrame("PluginName"_tr, APP_VERSION);
 
 		auto Status = new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer *renderer, u16 x, u16 y, u16 w, u16 h) {
-			renderer->drawString("Battery/Charger Stats:", false, 20, 120, 20, renderer->a(0xFFFF));
+			renderer->drawString("BatteryOrChargerStatusBatteryOverlayCustomDrawerText"_tr.c_str(), false, 20, 120, 20, renderer->a(0xFFFF));
 			renderer->drawString(Battery_c, false, 20, 155, 18, renderer->a(0xFFFF));
 		});
 
@@ -24,9 +24,7 @@ public:
 	}
 
 	virtual void update() override {
-
 		///Battery
-
 		mutexLock(&mutex_BatteryChecker);
 		char tempBatTimeEstimate[8] = "-:--";
 		if (batTimeEstimate >= 0) {
@@ -45,18 +43,7 @@ public:
 
 		if (ChargerConnected)
 			snprintf(Battery_c, sizeof Battery_c,
-				"Battery Actual Capacity: %.0f mAh\n"
-				"Battery Designed Capacity: %.0f mAh\n"
-				"Battery Temperature: %.1f\u00B0C\n"
-				"Battery Raw Charge: %.1f%%\n"
-				"Battery Age: %.1f%%\n"
-				"Battery Voltage (%ds AVG): %.0f mV\n"
-				"Battery Current Flow (%ss AVG): %+.0f mA\n"
-				"Battery Power Flow%s: %+.3f W\n"
-				"Battery Remaining Time: %s\n"
-				"Charger Type: %u\n"
-				"Charger Max Voltage: %u mV\n"
-				"Charger Max Current: %u mA",
+				"UpdateBetteryChargeInfoChargerBatteryOverlayCustomDrawerText"_tr.c_str(),
 				actualFullBatCapacity,
 				designedFullBatCapacity,
 				(float)_batteryChargeInfoFields.BatteryTemperature / 1000,
@@ -64,7 +51,7 @@ public:
 				(float)_batteryChargeInfoFields.BatteryAge / 1000,
 				batteryFiltered ? 45 : 5, batVoltageAvg,
 				batteryFiltered ? "11.25" : "5", batCurrentAvg,
-				batteryFiltered ? "" : " (5s AVG)", PowerConsumption, 
+				batteryFiltered ? "" : "UpdateBetteryChargeInfoAVGBatteryOverlayCustomDrawerText"_tr.c_str(), PowerConsumption,
 				tempBatTimeEstimate,
 				ChargerConnected,
 				ChargerVoltageLimit,
@@ -72,15 +59,7 @@ public:
 			);
 		else
 			snprintf(Battery_c, sizeof Battery_c,
-				"Battery Actual Capacity: %.0f mAh\n"
-				"Battery Designed Capacity: %.0f mAh\n"
-				"Battery Temperature: %.1f\u00B0C\n"
-				"Battery Raw Charge: %.1f%%\n"
-				"Battery Age: %.1f%%\n"
-				"Battery Voltage (%ds AVG): %.0f mV\n"
-				"Battery Current Flow (%ss AVG): %+.0f mA\n"
-				"Battery Power Flow%s: %+.3f W\n"
-				"Battery Remaining Time: %s",
+				"UpdateBetteryChargeInfoBetteryBatteryOverlayCustomDrawerText"_tr.c_str(),
 				actualFullBatCapacity,
 				designedFullBatCapacity,
 				(float)_batteryChargeInfoFields.BatteryTemperature / 1000,
@@ -88,14 +67,14 @@ public:
 				(float)_batteryChargeInfoFields.BatteryAge / 1000,
 				batteryFiltered ? 45 : 5, batVoltageAvg,
 				batteryFiltered ? "11.25" : "5", batCurrentAvg,
-				batteryFiltered ? "" : " (5s AVG)", PowerConsumption, 
+				batteryFiltered ? "" : "UpdateBetteryChargeInfoAVGBatteryOverlayCustomDrawerText"_tr.c_str(), PowerConsumption,
 				tempBatTimeEstimate
 			);
 		mutexUnlock(&mutex_BatteryChecker);
-		
 	}
-	virtual bool handleInput(uint64_t keysDown, uint64_t keysHeld, touchPosition touchInput, JoystickPosition leftJoyStick, JoystickPosition rightJoyStick) override {
-		if (keysDown & KEY_B) {
+
+	virtual bool handleInput(uint64_t keysDown, uint64_t keysHeld, const HidTouchState &touchPos, HidAnalogStickState leftJoyStick, HidAnalogStickState rightJoyStick) override {
+		if (keysHeld & HidNpadButton_B) {
 			tsl::goBack();
 			return true;
 		}

@@ -37,14 +37,18 @@ include $(DEVKITPRO)/libnx/switch_rules
 #   of a homebrew executable (.nro). This is intended to be used for sysmodules.
 #   NACP building is skipped as well.
 #---------------------------------------------------------------------------------
-APP_TITLE	:=	Status Monitor
-APP_VERSION	:=	1.0.4
-TARGET		:=	$(notdir $(CURDIR))
+APP_TITLE	:=	StatusMonitor
+APP_VERSION	:=	v1.0.4
+TARGET		:=	$(APP_TITLE)
 BUILD		:=	build
 SOURCES		:=	source
 INCLUDES	:=	include lib/Atmosphere-libs/libstratosphere/source/dmnt lib/Atmosphere-libs/libstratosphere/source lib/libtesla/include
 NO_ICON		:=  1
 #ROMFS       :=  romfs
+
+ifeq ($(RELEASE),)
+	APP_VERSION	:=	$(APP_VERSION)-$(shell git describe --always)
+endif
 
 #---------------------------------------------------------------------------------
 # options for code generation
@@ -54,9 +58,9 @@ ARCH	:=	-march=armv8-a+crc+crypto -mtune=cortex-a57 -mtp=soft -fPIE
 CFLAGS	:=	-g -Wall -O2 -ffunction-sections \
 			$(ARCH) $(DEFINES)
 
-CFLAGS	+=	$(INCLUDE) -D__SWITCH__ -DAPP_VERSION="\"$(APP_VERSION)\""
+CFLAGS	+=	$(INCLUDE) -D__SWITCH__ -DAPP_VERSION=\"$(APP_VERSION)\" -DAPPTITLE=\"$(APP_TITLE)\" -DBUILD_STATUS_MONITOR_OVERLAY
 
-CXXFLAGS	:= $(CFLAGS) -fno-exceptions -std=c++23 -Wno-dangling-else
+CXXFLAGS	:= $(CFLAGS) -fexceptions -std=c++23 -Wno-dangling-else
 
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-specs=$(DEVKITPRO)/libnx/switch.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
@@ -166,10 +170,17 @@ all: $(BUILD)
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
+	@rm -rf $(CURDIR)/SdOut
+	@mkdir -p $(CURDIR)/SdOut/switch/.overlays/lang/$(APP_TITLE)
+	@mkdir -p $(CURDIR)/SdOut/config/status-monitor/
+	@cp -r $(TARGET).ovl $(CURDIR)/SdOut/switch/.overlays/
+	@cp -r $(CURDIR)/lang/* $(CURDIR)/SdOut/switch/.overlays/lang/$(APP_TITLE)/
+	@cp -r $(CURDIR)/config/status-monitor/config.ini.template $(CURDIR)/SdOut/config/status-monitor/config.ini
+	@cd $(CURDIR)/SdOut; zip -r -q -9 $(APP_TITLE).zip switch config; cd $(CURDIR)
 
 #---------------------------------------------------------------------------------
 clean:
-	@rm -fr $(BUILD) $(TARGET).ovl $(TARGET).nro $(TARGET).nacp $(TARGET).elf
+	@rm -fr $(BUILD) $(TARGET).ovl $(TARGET).nro $(TARGET).nacp $(TARGET).elf $(CURDIR)/SdOut
 
 
 #---------------------------------------------------------------------------------
